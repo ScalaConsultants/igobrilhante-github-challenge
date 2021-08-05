@@ -13,7 +13,9 @@
         <appender-ref ref="STDOUT" />
     </appender>
 
-    <root level="DEBUG">
+    <logger name="net.sf.ehcache" level="OFF"/>
+
+    <root level="INFO">
         <appender-ref ref="ASYNC"/>
     </root>
 

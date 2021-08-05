@@ -6,40 +6,38 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 
 import akka.actor.typed.ActorSystem
-import akka.http.javadsl.unmarshalling.Unmarshaller
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpHeader, HttpRequest, HttpResponse}
-import akka.http.scaladsl.unmarshalling.{Unmarshal, Unmarshaller}
-import akka.stream.{Graph, Materializer, SinkShape}
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, OAuth2BearerToken}
 import akka.http.scaladsl.model._
-import HttpMethods._
-
-import com.igobrilhante.GHSystem
-import com.igobrilhante.github.api.GHService
-import com.igobrilhante.github.models.{GHCommit, GHContributor, GHOrganization, GHRepository}
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
-import HttpProtocols._
-import MediaTypes._
-import HttpCharsets._
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 
-import com.igobrilhante.github.commons.Logging
+import com.igobrilhante.github.api.GHService
+import com.igobrilhante.github.commons.{CacheHeader, CacheHelper, Logging}
+import com.igobrilhante.github.models.{GHContributor, GHOrganization, GHRepository}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+import scalacache.ehcache.EhcacheCache
+import scalacache.modes.scalaFuture._
+import scalacache._
 
 class GHServiceImpl()(implicit val system: ActorSystem[_], val ec: ExecutionContext) extends GHService with Logging {
 
   private type ContributorRepo = (GHContributor, GHRepository)
-  private val mat                    = Materializer.matFromSystem
-  private val BaseApi                = "https://api.github.com"
-  private val http                   = Http(system)
-  private val MaxReposPerPage        = 100
+  private val mat = Materializer.matFromSystem
+  private val BaseApi = "https://api.github.com"
+  private val http = Http(system)
+  private val MaxReposPerPage = 100
   private val MaxContributorsPerPage = 100
-  private val config                 = system.settings.config
-  private val githubConfig           = config.getConfig("github")
-  private val GitHubUser             = githubConfig.getString("username")
-  private val GitHubToken            = githubConfig.getString("token")
-  private val GitHubCredentials      = BasicHttpCredentials(GitHubUser, GitHubToken)
-  private val t                      = Http().cachedHostConnectionPoolHttps("api.github.com")
+  private val config = system.settings.config
+  private val githubConfig = config.getConfig("github")
+  private val GitHubToken = githubConfig.getString("token")
+  private val GitHubCredentials = OAuth2BearerToken(GitHubToken)
+  private val t = Http().cachedHostConnectionPoolHttps("api.github.com")
+
+  val underlying = CacheHelper.getContributorsCache
+  implicit val flags = Flags()
+  implicit val cache: Cache[List[GHContributor]] = EhcacheCache(underlying)
 
   override def getOrganization(organizationId: String): Future[GHOrganization] = {
     val uri = s"$BaseApi/orgs/$organizationId"
@@ -56,20 +54,22 @@ class GHServiceImpl()(implicit val system: ActorSystem[_], val ec: ExecutionCont
     val uri = s"$BaseApi/orgs/$organizationId/repos?page=$page&per_page=$MaxReposPerPage"
     for {
       response <- request(uri)
-      list     <- Unmarshal(response).to[Option[List[GHRepository]]].map(optionToEmptyList)
+      list <- Unmarshal(response).to[Option[List[GHRepository]]].map(optionToEmptyList)
     } yield list
 
   }
 
   override def getContributors(organizationId: String, repositoryId: String, page: Int): Future[List[GHContributor]] = {
     logger.debug("getContributors for org {}, repo {} and page {}", organizationId, repositoryId, page)
-
     val uri =
       s"$BaseApi/repos/$organizationId/$repositoryId/contributors?per_page$MaxContributorsPerPage&page=$page"
-    for {
-      response <- request(uri)
-      list     <- Unmarshal(response).to[Option[List[GHContributor]]].map(optionToEmptyList)
-    } yield list
+
+    cachingF[Future, List[GHContributor]](uri)(Some(10.hours)) {
+      for {
+        response <- request(uri)
+        list <- Unmarshal(response).to[Option[List[GHContributor]]].map(optionToEmptyList)
+      } yield list
+    }
   }
 
   override def getAllContributors(organizationId: String, repositoryId: String): Future[List[GHContributor]] = {
@@ -102,7 +102,7 @@ class GHServiceImpl()(implicit val system: ActorSystem[_], val ec: ExecutionCont
         .map {
           case (_, contributorRepositories) =>
             val totalContributions = contributorRepositories.map(_._1.contributions).sum
-            val contributor        = contributorRepositories.head._1
+            val contributor = contributorRepositories.head._1
             contributor.copy(contributions = totalContributions)
         }
         .toList
@@ -118,7 +118,7 @@ class GHServiceImpl()(implicit val system: ActorSystem[_], val ec: ExecutionCont
 
     val futureSource = for {
       org <- getOrganization(organizationId)
-      pages           = getNumberOfPages(org.total, MaxReposPerPage)
+      pages = getNumberOfPages(org.total, MaxReposPerPage)
       repoPagesSource = source(pages)
     } yield repoPagesSource
 
@@ -126,8 +126,8 @@ class GHServiceImpl()(implicit val system: ActorSystem[_], val ec: ExecutionCont
       .futureSource(futureSource)
       .mapAsyncUnordered(2) { getRepositories(organizationId, _) }
       .mapConcat(identity)
-      .throttle(10, 1 second)
-      .mapAsync(2)(getContributorsWithRepo)
+      .throttle(50, 1 second)
+      .mapAsync(4)(getContributorsWithRepo)
       .map { case (repo, contributors) => contributors.map((_, repo)) }
       .mapConcat(identity)
       .toMat(sink)(Keep.right)
@@ -149,7 +149,7 @@ class GHServiceImpl()(implicit val system: ActorSystem[_], val ec: ExecutionCont
         .map {
           case (_, contributorRepositories) =>
             val totalContributions = contributorRepositories.map(_._1.contributions).sum
-            val contributor        = contributorRepositories.head._1
+            val contributor = contributorRepositories.head._1
             contributor.copy(contributions = totalContributions)
         }
         .toList
@@ -175,7 +175,7 @@ class GHServiceImpl()(implicit val system: ActorSystem[_], val ec: ExecutionCont
           case (result, future) =>
             for {
               currentList <- result
-              next        <- future
+              next <- future
             } yield currentList ++ next
         }
     }
@@ -205,20 +205,52 @@ class GHServiceImpl()(implicit val system: ActorSystem[_], val ec: ExecutionCont
     } yield result
   }
 
-  private def request(uri: String) =
-    http
-      .singleRequest(
+  private def request(uri: String) = {
+
+    def internalCache(uri: String): Future[Option[CacheHeader]] = {
+      Future.successful(None)
+    }
+
+    // TODO consider headers ETAG and Last-Modified to void consuming limits of Github API
+    def handleCacheHeaders(optCache: Option[CacheHeader]): Seq[HttpHeader] = {
+      optCache match {
+        case Some(cacheHeader) =>
+          cacheHeader.etag.fold(Seq.empty[HttpHeader]) { etag => Seq(headers.ETag(etag)) }
+          cacheHeader.lastModified.fold(Seq.empty[HttpHeader]) { last =>
+            Seq(headers.`If-Modified-Since`(DateTime(last)))
+          }
+        case None =>
+          // simplesmente envia a requisição
+          Seq()
+      }
+    }
+
+    def makeRequest(httpRequest: HttpRequest) =
+      http
+        .singleRequest(httpRequest)
+        .map(interceptResponseFor(uri))
+
+    internalCache(uri)
+      .map { handleCacheHeaders }
+      .map { cacheHeaders =>
         HttpRequest(uri = uri).withHeaders(
-          headers.Authorization(GitHubCredentials)
+          headers.Authorization(GitHubCredentials),
+          cacheHeaders: _*
         )
-      )
-      .map(interceptResponseFor(uri))
+      }
+      .flatMap(makeRequest)
+
+  }
+
+//  private def handleNotModified(response: HttpResponse)
 
   private def interceptResponseFor(uri: String)(response: HttpResponse): HttpResponse = {
 
     response.status match {
       case StatusCodes.Success(status) =>
-      case _                           => logFailedStatus(uri, response)
+      // Persist the ETag and Last-Modified headers
+      case _ =>
+        logFailedStatus(uri, response)
     }
 
     response
