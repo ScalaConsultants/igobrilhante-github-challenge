@@ -20,6 +20,7 @@ lazy val root = (project in file(".")).
     name := "github-challenge",
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-http"                % akkaHttpVersion,
+      "com.typesafe.akka" %% "akka-http-caching"        % akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-circe"          % akkaHttpJsonVersion,
       "com.typesafe.akka" %% "akka-actor-typed"         % akkaVersion,
       "com.typesafe.akka" %% "akka-stream"              % akkaVersion,

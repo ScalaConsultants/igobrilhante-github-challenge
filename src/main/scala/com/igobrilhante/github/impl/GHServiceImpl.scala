@@ -80,6 +80,7 @@ class GHServiceImpl()(implicit val system: ActorSystem[_], val ec: ExecutionCont
 
   def getRankedContributors(organizationId: String): Future[List[GHContributor]] = {
     computeRankingWithStreaming(organizationId)
+      .map(_.take(20))
   }
 
   def getAllRepositories(organizationId: String): Future[List[GHRepository]] = {
