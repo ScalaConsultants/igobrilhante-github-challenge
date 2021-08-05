@@ -10,7 +10,7 @@ class GHServicePublicSpec extends GHSpec {
   val organizationId = "ScalaConsultants"
   val publicRepo     = "lift-rest-demo"
 
-  "GHService Public Spec" should "get public repositories for ScalaConsultants" in {
+  "GHService Public Spec" should "get public repositories for ScalaConsultants and page 1" in {
 
     val list = service.getRepositories("ScalaConsultants", page = 1).futureValue(timeout)
 
@@ -26,7 +26,7 @@ class GHServicePublicSpec extends GHSpec {
   }
 
   it should "get a list of contributors for public repo 'lift-rest-demo'" in {
-    val list = service.getContributors(organizationId, publicRepo).futureValue(timeout)
+    val list = service.getAllContributors(organizationId, publicRepo).futureValue(timeout)
 
     list should not be empty
   }

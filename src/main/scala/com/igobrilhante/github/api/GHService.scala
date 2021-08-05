@@ -12,7 +12,9 @@ trait GHService {
 
   def getAllRepositories(organizationId: String): Future[List[GHRepository]]
 
-  def getContributors(organizationId: String, repositoryId: String): Future[List[GHContributor]]
+  def getContributors(organizationId: String, repositoryId: String, page: Int): Future[List[GHContributor]]
+
+  def getAllContributors(organizationId: String, repositoryId: String): Future[List[GHContributor]]
 
   def getRankedContributors(organizationId: String): Future[List[GHContributor]]
 

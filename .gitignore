@@ -10,3 +10,4 @@ project/target
 .bloop/
 .vscode/
 
+.env
