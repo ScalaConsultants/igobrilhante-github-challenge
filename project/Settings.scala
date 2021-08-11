@@ -4,7 +4,6 @@ import com.typesafe.sbt.packager.docker.Cmd
 object Settings {
 
   val dockerSettings = Seq(
-    // change to smaller base image
     dockerBaseImage := "adoptopenjdk/openjdk11:x86_64-debianslim-jdk-11.0.10_9-slim",
     dockerRepository := Some("igobrilhante"),
     dockerExposedPorts ++= Seq(8080),

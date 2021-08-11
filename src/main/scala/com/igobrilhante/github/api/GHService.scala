@@ -6,7 +6,7 @@ import com.igobrilhante.github.models.{GHContributor, GHOrganization, GHReposito
 
 trait GHService {
 
-  def getOrganization(organizationId: String): Future[GHOrganization]
+  def getOrganization(organizationId: String): Future[Option[GHOrganization]]
 
   def getRepositories(organizationId: String, page: Int): Future[List[GHRepository]]
 
@@ -15,7 +15,5 @@ trait GHService {
   def getContributors(organizationId: String, repositoryId: String, page: Int): Future[List[GHContributor]]
 
   def getAllContributors(organizationId: String, repositoryId: String): Future[List[GHContributor]]
-
-  def getRankedContributors(organizationId: String): Future[List[GHContributor]]
 
 }

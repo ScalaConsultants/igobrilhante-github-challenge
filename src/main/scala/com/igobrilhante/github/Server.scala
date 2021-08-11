@@ -1,6 +1,7 @@
 package com.igobrilhante.github
 
 import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.duration.DurationInt
 import scala.io.StdIn
 
 import akka.actor.typed.{ActorSystem, DispatcherSelector}
@@ -8,12 +9,12 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 
 import com.igobrilhante.GHSystem
-import com.igobrilhante.github.api.GHService
-import com.igobrilhante.github.impl.GHServiceImpl
-import com.igobrilhante.github.modules.GHServiceModule
+import com.igobrilhante.github.api.{GHService, RankAlgorithm}
+import com.igobrilhante.github.commons.Logging
+import com.igobrilhante.github.impl.{GHServiceImpl, StreamingRankAlgorithm}
 import com.igobrilhante.github.routes.ApiRoutes
 
-object Server extends GHServiceModule {
+object Server extends Logging {
 
   def main(args: Array[String]): Unit = {
 
@@ -22,17 +23,26 @@ object Server extends GHServiceModule {
       system.dispatchers.lookup(DispatcherSelector.fromConfig("app.service-dispatcher"))
 
     val service: GHService = new GHServiceImpl()(system, ec)
+    val rankingAlgorithm: RankAlgorithm = new StreamingRankAlgorithm(service)
+    val apiModules = ApiRoutes.Modules(service, rankingAlgorithm)
 
-    val apiRoutes = ApiRoutes(service)
-    val route     = Route.seal(apiRoutes)
+    val apiRoutes = ApiRoutes(apiModules)
+    val route = Route.seal(apiRoutes)
+    val host = "localhost"
+    val port = 8080
 
-    val bindingFuture = Http().newServerAt("localhost", 8080).bind(route)
+    val bindingFuture = Http().newServerAt(host, port).bind(route)
 
-    println(s"Server now online. Please navigate to http://localhost:8080\nPress RETURN to stop...")
+    logger.info(s"Server now online. Please navigate to http://$host:8080\nPress RETURN to stop...")
     StdIn.readLine()
     bindingFuture
+      .map(_.addToCoordinatedShutdown(hardTerminationDeadline = 30.seconds))
       .flatMap(_.unbind())
-      .onComplete(_ => system.terminate())
+      .onComplete { status =>
+        logger.info(s"Terminating the system with $status")
+        system.terminate()
+      }
+
   }
 
 }

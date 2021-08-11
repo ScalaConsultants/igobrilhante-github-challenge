@@ -1,7 +1,7 @@
 package com.igobrilhante.github.models
 
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto._
+import io.circe.{Decoder, Encoder}
 
 case class GHContributor(id: Long, login: String, contributions: Int)
 

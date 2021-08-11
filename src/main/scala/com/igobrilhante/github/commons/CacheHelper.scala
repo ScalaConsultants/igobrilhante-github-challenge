@@ -4,9 +4,8 @@ import net.sf.ehcache.{Cache, CacheManager}
 
 object CacheHelper {
 
-  private val cacheManager = new CacheManager
-
   val GithubContributorsCache = "githubContributorsCache"
+  private val cacheManager = new CacheManager
 
   cacheManager.addCache(GithubContributorsCache)
 

@@ -20,8 +20,8 @@ class GHServicePublicSpec extends GHSpec {
 
   it should s"get the organization '$organizationId'" in {
     val org = service.getOrganization(organizationId).futureValue(timeout)
-
-    org.login shouldEqual organizationId
+    org should not be empty
+    org.get.login shouldEqual organizationId
 
   }
 
@@ -32,8 +32,11 @@ class GHServicePublicSpec extends GHSpec {
   }
 
   it should s"get all repositories for $organizationId" in {
-    val org  = service.getOrganization(organizationId).futureValue(timeout)
+    val optOrg = service.getOrganization(organizationId).futureValue(timeout)
     val list = service.getAllRepositories(organizationId).futureValue(timeout)
+
+    optOrg should not be empty
+    val org = optOrg.get
 
     list should have size org.total
     list.filter(_.`private`) should have size org.total_private_repos.getOrElse(0).toLong
