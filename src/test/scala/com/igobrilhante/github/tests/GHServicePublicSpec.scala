@@ -1,11 +1,6 @@
 package com.igobrilhante.github.tests
 
-import com.igobrilhante.github.api.GHService
-import com.igobrilhante.github.impl.GHServiceImpl
-
 class GHServicePublicSpec extends GHSpec {
-
-  val service: GHService = new GHServiceImpl()
 
   val organizationId = "ScalaConsultants"
   val publicRepo     = "lift-rest-demo"
@@ -33,7 +28,7 @@ class GHServicePublicSpec extends GHSpec {
 
   it should s"get all repositories for $organizationId" in {
     val optOrg = service.getOrganization(organizationId).futureValue(timeout)
-    val list = service.getAllRepositories(organizationId).futureValue(timeout)
+    val list   = service.getAllRepositories(organizationId).futureValue(timeout)
 
     optOrg should not be empty
     val org = optOrg.get
