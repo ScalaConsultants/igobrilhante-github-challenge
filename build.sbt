@@ -15,7 +15,9 @@ lazy val scalaTestVersion         = "3.2.9"
 
 Global / onChangedBuildSource := IgnoreSourceChanges
 
-lazy val root = (project in file("."))
+lazy val root = (project in file(".")).aggregate(akkaProject)
+
+lazy val akkaProject = (project in file("akka-project"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(
     organization := "com.igobrilhante",
@@ -25,6 +27,45 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       // cats
       "org.typelevel" %% "cats-core" % catsVersion,
+      // akka http
+      "com.typesafe.akka" %% "akka-http"         % akkaHttpVersion,
+      "com.typesafe.akka" %% "akka-http-caching" % akkaHttpVersion,
+      "de.heikoseeberger" %% "akka-http-circe"   % akkaHttpJsonVersion,
+      // akka
+      "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
+      "com.typesafe.akka" %% "akka-stream"      % akkaVersion,
+      // logs
+      "ch.qos.logback" % "logback-classic" % logbackClassicVersion,
+      // circle
+      "io.circe" %% "circe-core"    % circeVersion,
+      "io.circe" %% "circe-generic" % circeVersion,
+      "io.circe" %% "circe-parser"  % circeVersion,
+      // others
+      "com.github.cb372" %% "scalacache-ehcache" % scalaCacheEhCacheVersion,
+      // tests
+      "com.typesafe.akka" %% "akka-http-testkit"        % akkaHttpVersion  % Test,
+      "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion      % Test,
+      "org.scalatest"     %% "scalatest"                % scalaTestVersion % Test
+    )
+  )
+  .settings(dockerSettings: _*)
+
+lazy val zioProject = (project in file("zio-project"))
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
+  .settings(
+    organization := "com.igobrilhante",
+    scalaVersion := "2.13.4",
+    version := "0.1.0",
+    name := "github-challenge",
+    libraryDependencies ++= Seq(
+      // cats
+      "org.typelevel" %% "cats-core"   % catsVersion,
+      "dev.zio"       %% "zio"         % "1.0.10",
+      "dev.zio"       %% "zio-streams" % "1.0.10",
+      //
+      "com.softwaremill.sttp.client3" %% "core"                          % "3.3.13",
+      "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % "3.3.13",
+      "com.softwaremill.sttp.client3" %% "circe"                         % "3.3.13",
       // akka http
       "com.typesafe.akka" %% "akka-http"         % akkaHttpVersion,
       "com.typesafe.akka" %% "akka-http-caching" % akkaHttpVersion,
