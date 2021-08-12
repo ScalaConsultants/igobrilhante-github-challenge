@@ -18,4 +18,11 @@ class HttpServerSpec extends GHSpec {
     }
   }
 
+//  it should "get response for very large organizations like Apache" in {
+//    val uri = "/org/Apache/contributors"
+//    Get(uri) ~> routes ~> check {
+//      status shouldEqual StatusCodes.OK
+//    }
+//  }
+
 }

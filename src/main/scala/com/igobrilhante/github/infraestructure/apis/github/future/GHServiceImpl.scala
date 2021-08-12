@@ -24,9 +24,9 @@ class GHServiceImpl()(implicit val system: ActorSystem[_], val ec: ExecutionCont
     with Logging {
 
   private type ContributorRepo = (GHContributor, GHRepository)
-  val http: HttpExt = Http(system)
-  private val underlying = CacheHelper.getContributorsCache
-  private val BaseApi    = "https://api.github.com"
+  val http: HttpExt                  = Http(system)
+  private val underlying             = CacheHelper.getContributorsCache
+  private val BaseApi                = "https://api.github.com"
   private val MaxReposPerPage        = 100
   private val MaxContributorsPerPage = 100
 
@@ -51,7 +51,7 @@ class GHServiceImpl()(implicit val system: ActorSystem[_], val ec: ExecutionCont
   ): Future[List[GHContributor]] = {
     logger.debug("getContributors for org {}, repo {} and page {}", organizationId, repositoryId, page)
     val uri =
-      s"$BaseApi/repos/$organizationId/$repositoryId/contributors?per_page$MaxContributorsPerPage&page=$page"
+      s"$BaseApi/repos/$organizationId/$repositoryId/contributors?per_page=$MaxContributorsPerPage&page=$page"
 
     //    cachingF[Future, List[GHContributor]](uri)(Some(10.hours)) {
     for {
@@ -118,13 +118,5 @@ class GHServiceImpl()(implicit val system: ActorSystem[_], val ec: ExecutionCont
   private def optionToEmptyList[A](optionList: Option[List[A]]): List[A] = optionList.getOrElse(List.empty[A])
 
   private def getNumberOfPages(total: Int, maxPerPage: Int): Int = math.ceil(total / maxPerPage.toDouble).toInt
-
-  private def getAllRepositoriesRecursiveStrategy(
-      organizationId: String
-  ): Future[List[GHRepository]] = {
-    def getRepos(page: Int): Future[List[GHRepository]] = getRepositories(organizationId, page)
-
-    paginate(1, MaxReposPerPage)(getRepos)
-  }
 
 }
