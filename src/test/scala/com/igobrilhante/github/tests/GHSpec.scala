@@ -6,11 +6,11 @@ import scala.language.postfixOps
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import akka.actor.typed.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 
 import com.igobrilhante.github.infraestructure.apis.github.future.GHServiceImpl
-import com.igobrilhante.github.infraestructure.http.GHSystem
 import com.igobrilhante.github.interfaces.algorithms.StreamingRankAlgorithm
 import com.igobrilhante.github.interfaces.controllers.Modules
 import com.igobrilhante.github.interfaces.gateway.Gateway
@@ -31,9 +31,9 @@ trait GHSpec
   val timeout: Timeout                          = Timeout(30 seconds)
   implicit val requestTimeout: RouteTestTimeout = RouteTestTimeout(120.seconds)
 
-  val testKit: ActorTestKit                               = ActorTestKit()
-  implicit val ec: ExecutionContextExecutor               = testKit.system.executionContext
-  implicit val actorSystem: ActorSystem[GHSystem.Command] = ActorSystem.create(GHSystem(), "main")
+  val testKit: ActorTestKit                 = ActorTestKit()
+  implicit val ec: ExecutionContextExecutor = testKit.system.executionContext
+  implicit val actorSystem                  = ActorSystem.create[Nothing](Behaviors.empty, "main")
 
   val service   = new GHServiceImpl()
   val algorithm = new StreamingRankAlgorithm(service)

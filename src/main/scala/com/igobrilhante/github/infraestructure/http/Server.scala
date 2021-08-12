@@ -1,9 +1,9 @@
 package com.igobrilhante.github.infraestructure.http
 
 import scala.concurrent.ExecutionContextExecutor
-import scala.concurrent.duration.DurationInt
-import scala.io.StdIn
+import scala.util.{Failure, Success}
 
+import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, DispatcherSelector}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
@@ -16,9 +16,8 @@ import com.igobrilhante.github.interfaces.gateway.Gateway
 
 object Server extends Logging {
 
-  def main(args: Array[String]): Unit = {
+  private def startHttpServer()(implicit system: ActorSystem[_]): Unit = {
 
-    implicit val system: ActorSystem[_] = ActorSystem(GHSystem(), "github-system")
     implicit val ec: ExecutionContextExecutor =
       system.dispatchers.lookup(DispatcherSelector.fromConfig("app.service-dispatcher"))
 
@@ -27,22 +26,31 @@ object Server extends Logging {
     val apiModules       = Modules(service, rankingAlgorithm)
 
     val apiRoutes = Gateway(apiModules)
-    val route     = Route.seal(apiRoutes)
-    val host      = "localhost"
+    val routes    = Route.seal(apiRoutes)
+    val host      = "0.0.0.0"
     val port      = 8080
 
-    val bindingFuture = Http().newServerAt(host, port).bind(route)
+    val futureBinding = Http().newServerAt(host, port).bind(routes)
 
-    logger.info(s"Server now online. Please navigate to http://$host:8080\nPress RETURN to stop...")
-    StdIn.readLine()
-    bindingFuture
-      .map(_.addToCoordinatedShutdown(hardTerminationDeadline = 30.seconds))
-      .flatMap(_.unbind())
-      .onComplete { status =>
-        logger.info(s"Terminating the system with $status")
+    futureBinding.onComplete {
+      case Success(binding) =>
+        val address = binding.localAddress
+        logger.info("Server online at http://{}:{}/", address.getHostString, address.getPort)
+      case Failure(ex) =>
+        logger.error("Failed to bind HTTP endpoint, terminating system", ex)
         system.terminate()
-      }
+    }
+  }
+  //#start-http-server
+  def main(args: Array[String]): Unit = {
+    //#server-bootstrapping
+    val rootBehavior = Behaviors.setup[Nothing] { context =>
+      startHttpServer()(context.system)
 
+      Behaviors.empty
+    }
+    val system  = ActorSystem[Nothing](rootBehavior, "github-system")
+    //#server-bootstrapping
   }
 
 }
