@@ -5,6 +5,8 @@ EXEC="${DIR}/github-challenge"
 
 which sbt >/dev/null || (echo "sbt not found." && exit 1)
 
+source .env
+
 if [[ -z "$GH_TOKEN" ]]
 then
     echo "No token found"
@@ -17,7 +19,11 @@ fi
 if [[ ! -d "$DIR" ]]
 then
     sbt clean stage
-    [[ $? -ne 0 ]]; echo "Fail to build project"; exit 1;
+    if [[ $? -ne 0 ]]
+    then
+        echo "Fail to build project"
+        exit 1
+    fi
 fi
 
 # then execute the script

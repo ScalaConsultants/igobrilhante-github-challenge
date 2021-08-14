@@ -2,7 +2,7 @@ package com.igobrilhante.github.zio.infraestructure.apis.github
 
 import scala.concurrent.ExecutionContext
 
-import com.igobrilhante.github.zio.domain.entities.GHContributor
+import com.igobrilhante.github.core.entities.GHContributor
 import net.sf.ehcache.CacheManager
 import scalacache.ehcache.EhcacheCache
 import scalacache.{Cache, Flags}

@@ -1,11 +1,10 @@
-package com.igobrilhante.github.zio.interfaces.adapters
+package com.igobrilhante.github.adapters.json.circle
 
-import com.igobrilhante.github.core.entities.{GHCommit, GHContributor, GHOrganization, GHRepository}
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import com.igobrilhante.github.core.entities._
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, Encoder, Json}
 
-object CircleJsonEntitiesAdapters extends FailFastCirceSupport {
+trait CircleJsonEntitiesAdapters {
 
   implicit lazy val commitDecoder: Decoder[GHCommit] = deriveDecoder
   implicit lazy val commitEncoder: Encoder[GHCommit] = deriveEncoder
@@ -19,4 +18,14 @@ object CircleJsonEntitiesAdapters extends FailFastCirceSupport {
   implicit lazy val repoDecoder: Decoder[GHRepository] = deriveDecoder
   implicit lazy val repoEncoder: Encoder[GHRepository] = deriveEncoder
 
+  implicit val notFoundExceptionEncoder: Encoder[NotFoundException] = (e: NotFoundException) =>
+    Json.obj(
+      ("message", Json.fromString(e.message))
+    )
+
+  implicit val unexpectedErrorDecoder: Decoder[UnexpectedErrorException] = deriveDecoder
+  implicit val unexpectedErrorEncoder: Encoder[UnexpectedErrorException] = deriveEncoder
+
 }
+
+object CircleJsonEntitiesAdapters extends CircleJsonEntitiesAdapters
