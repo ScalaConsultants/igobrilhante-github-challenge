@@ -41,16 +41,16 @@ object Server extends Logging {
         system.terminate()
     }
   }
-  //#start-http-server
+
   def main(args: Array[String]): Unit = {
-    //#server-bootstrapping
+
     val rootBehavior = Behaviors.setup[Nothing] { context =>
       startHttpServer()(context.system)
 
       Behaviors.empty
     }
     val system  = ActorSystem[Nothing](rootBehavior, "github-system")
-    //#server-bootstrapping
+
   }
 
 }

@@ -26,6 +26,8 @@ object UnexpectedErrorException {
 
   def withDetail(details: String): UnexpectedErrorException = UnexpectedErrorException(details = Some(details))
 
+  def fromThrowable(error: Throwable): UnexpectedErrorException = UnexpectedErrorException(details = Some(error.getMessage))
+
 }
 
 //case class GitHubApiException() extends AppException
