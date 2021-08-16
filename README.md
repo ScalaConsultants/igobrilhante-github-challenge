@@ -86,11 +86,13 @@ The Scala libraries used to in **Akka Project****:
 - Logback
 - Scalatest
 
-Following the same idea from `Akka project`, here we take advantage of ZIO Stream to provide the implementation. In general the approach
-is the same, but ZIO Stream offers interesting features that improved the implementation:
-- `ZStream.paginateChunkM` and `ZStream.paginateM` help to paginate over repository and contributor pages in a simple and elegant way
+Following the same idea from `Akka project`, here we take advantage of ZIO Stream to provide the implementation. In
+general the approach is the same, but ZIO Stream offers interesting features that improved the implementation:
 
-> **NOTE**. Although using `throttleShape` to control data processing throughput, it seems not controlling as Akka Stream does in this case. 
+- `ZStream.paginateChunkM` and `ZStream.paginateM` help to paginate over repository and contributor pages in a simple
+  and elegant way
+
+> **NOTE**. Although using `throttleShape` to control data processing throughput, it seems not controlling as Akka Stream does in this case.
 > I must understand better why this happened, maybe it is because ZIO Stream is pull-based streams, while Akka Stream is push-based streams.
 > Therefore, in ZIO Stream, the next element will be asked only when the sink asks for it.
 
@@ -106,7 +108,8 @@ GH_TOKEN="...."
 
 ### Running with sbt
 
-To run the project using sbt, we can simply execute the helper script `run-akka-with-sbt.sh` or `run-zio-with-sbt.sh` as follows.
+To run the project using sbt, we can simply execute the helper script `run-akka-with-sbt.sh` or `run-zio-with-sbt.sh` as
+follows.
 
 ```bash
 # run Akka Project
@@ -121,7 +124,10 @@ This script will run the project and, if necessary, it will build the project be
 ### Running with docker
 
 To run the project using docker, we can simply execute the helper script `run-with-docker.sh` as follows. The manifest
-`docker/docker-compose.yml` uses the image `igobrilhante/github-challenge:0.1.0` already published into DockerHub.
+`docker/docker-compose.yml` uses the images `igobrilhante/githubchallengezio:0.1.0`
+and `igobrilhante/githubchallengeakka:0.1.0` already published into DockerHub.
+
+> **NOTA**. Both http servers will run on docker, port `8080` for akka and `8081` for http4s with zio.
 
 ```bash
 # run the script
@@ -132,10 +138,17 @@ To run the project using docker, we can simply execute the helper script `run-wi
 
 Once the http server is running, it will be listening on port `8080`.
 
+```bash
+AKKA_SERVER=http://localhost:8080
+HTTP4S_SERVER=http://localhost:8081
+
+SERVER=${HTTP4S_SERVER}
+```
+
 **CASE 1. Get an invalid organization**
 
 ```bash
-curl http://localhost:8080/org/igobrilhante/contributors
+curl ${SERVER}/org/igobrilhante/contributors
 ```
 
 It should result in 404
@@ -157,13 +170,13 @@ Server: akka-http/10.2.6
 It might take some seconds to return the response.
 
 ```bash
-curl http://localhost:8080/org/ScalaConsultants/contributors
+curl ${SERVER}/org/ScalaConsultants/contributors
 ```
 
 **CASE 3. Get ranked list for Github**
 
 ```bash
-curl http://localhost:8080/org/Github/contributors
+curl ${SERVER}/org/Github/contributors
 ```
 
 > **NOTE**. The http server is configured with a timeout of 180 seconds. After this, the request is aborted.

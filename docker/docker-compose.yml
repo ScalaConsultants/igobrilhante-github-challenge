@@ -1,10 +1,18 @@
 version: '3.1'
 
 services:
-  github-api:
-    image: igobrilhante/github-challenge:0.1.0
+  github-akka-api:
+    image: igobrilhante/githubchallengeakka:0.1.0
     restart: always
     ports:
       - 8080:8080
+    env_file:
+      - ../.env
+
+  github-http4s-zio-api:
+    image: igobrilhante/githubchallengezio:0.1.0
+    restart: always
+    ports:
+      - 8081:8080
     env_file:
       - ../.env

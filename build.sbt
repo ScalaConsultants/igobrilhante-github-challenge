@@ -21,12 +21,9 @@ Global / onChangedBuildSource := IgnoreSourceChanges
 
 lazy val root = (project in file("."))
   .settings(name := "github-challenge")
-  .aggregate(core, akkaProject, zioProject)
+  .aggregate(core, githubChallengeAkka, githubChallengeZio)
 
 lazy val core = (project in file("core"))
-  .settings(
-    version := "0.1.0"
-  )
   .settings(
     libraryDependencies ++= Seq(
       // cats
@@ -51,7 +48,7 @@ lazy val adapters = (project in file("adapters"))
   )
   .dependsOn(core)
 
-lazy val akkaProject = (project in file("akka-project"))
+lazy val githubChallengeAkka = (project in file("akka-project"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(
     libraryDependencies ++= Seq(
@@ -81,7 +78,7 @@ lazy val akkaProject = (project in file("akka-project"))
   .settings(dockerSettings: _*)
   .dependsOn(core, adapters)
 
-lazy val zioProject = (project in file("zio-project"))
+lazy val githubChallengeZio = (project in file("zio-project"))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(
     libraryDependencies ++= Seq(
