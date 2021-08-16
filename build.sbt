@@ -16,11 +16,12 @@ lazy val scalaTestVersion         = "3.2.9"
 ThisBuild / organization := "com.igobrilhante"
 ThisBuild / scalaVersion := "2.13.4"
 ThisBuild / version := "0.1.0"
-ThisBuild / name := "github-challenge"
 
 Global / onChangedBuildSource := IgnoreSourceChanges
 
-lazy val root = (project in file(".")).settings(name := "github-challenge").aggregate(core, akkaProject)
+lazy val root = (project in file("."))
+  .settings(name := "github-challenge")
+  .aggregate(core, akkaProject, zioProject)
 
 lazy val core = (project in file("core"))
   .settings(

@@ -28,10 +28,26 @@ Judging criteria (top the most important)
 ## Solution
 
 The project is organized following the clean architecture proposed by Robert C. Martin. However, I have not considered
-for this project the use of UseCases, since the project was simple with no business rules to make sense adding another
-layer of abstraction
+for this project the use of UseCases, since the project is simple with no business rules to make sense adding another
+layer of abstraction.
 
-The Scala libraries used to solve the challenge:
+The SBT plugins in turn:
+
+- sbt scoverage
+- sbt dotenv
+- sbt native packager
+
+To exploit Akka and ZIO possibilities, the solution has been developed using the two stacks. The overall organization of
+the project is the following.
+
+- `adapters`. Responsible for implementing adapters, such as json serialization using Circle;
+- `core`. Responsible for defining the services, entities and core parts of the project;
+- `akka-project`. Implementation using Akka toolkit;
+- `zio-project`. Implementation using ZIO and http4s.
+
+### Akka Project
+
+The Scala libraries used to in **Akka Project****:
 
 - Cats
 - Akka Http
@@ -40,12 +56,6 @@ The Scala libraries used to solve the challenge:
 - Scala EHCache
 - Logback
 - Scalatest
-
-The SBT plugins in turn:
-
-- sbt scoverage
-- sbt dotenv
-- sbt native packager
 
 To solve the ranking problem presented in the challenge, we can take advantage of a streaming-based approach in a way we
 do data transformation to retrieve a list of tuples `(contributor, contributions)` to get the final aggregation for the
@@ -64,6 +74,26 @@ is `StreamingRankAlgorithm`. A naive implementation was also done in `NaiveRankA
 
 **Figure 1.** An overview of the streaming based approach.
 
+## ZIO Project
+
+The Scala libraries used to in **Akka Project****:
+
+- ZIO
+- ZIO Stream
+- sttp
+- http4s
+- Circle Json
+- Logback
+- Scalatest
+
+Following the same idea from `Akka project`, here we take advantage of ZIO Stream to provide the implementation. In general the approach
+is the same, but ZIO Stream offers interesting features that improved the implementation:
+- `ZStream.paginateChunkM` and `ZStream.paginateM` help to paginate over repository and contributor pages in a simple and elegant way
+
+> **NOTE**. Although using `throttleShape` to control data processing throughput, it seems not controlling as Akka Stream does in this case. 
+> I must understand better why this happened, maybe it is because ZIO Stream is pull-based streams, while Akka Stream is push-based streams.
+> Therefore, in ZIO Stream, the next element will be asked only when the sink asks for it.
+
 ## Executing the project
 
 Please, provide the access token in the file `.env` as shown below. All process described here uses that file to get the
@@ -76,11 +106,14 @@ GH_TOKEN="...."
 
 ### Running with sbt
 
-To run the project using sbt, we can simply execute the helper script `run-with-sbt.sh` as follows.
+To run the project using sbt, we can simply execute the helper script `run-akka-with-sbt.sh` or `run-zio-with-sbt.sh` as follows.
 
 ```bash
-# run the script
-./run-with-sbt.sh
+# run Akka Project
+./run-akka-with-sbt.sh
+
+# run ZIO Project
+./run-zio-with-sbt.sh
 ```
 
 This script will run the project and, if necessary, it will build the project before starting the application.

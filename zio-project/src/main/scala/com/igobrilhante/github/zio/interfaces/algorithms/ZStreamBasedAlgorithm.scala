@@ -12,7 +12,7 @@ import zio.stream.{ZSink, ZStream}
 import zio.{Chunk, Task}
 
 /** Rank algorithm implementation using ZIO Task. */
-class ZAlgorithm(service: GHService[Task]) extends RankAlgorithm[Task] {
+class ZStreamBasedAlgorithm(service: GHService[Task]) extends RankAlgorithm[Task] {
 
   private type ContributorRepo = (GHContributor, GHRepository)
 

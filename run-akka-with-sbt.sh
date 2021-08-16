@@ -1,7 +1,7 @@
 #!/bin/bash
 
-DIR="target/universal/stage/bin"
-EXEC="${DIR}/github-challenge"
+DIR="akka-project/target/universal/stage/bin"
+EXEC="${DIR}/akkaproject"
 
 which sbt >/dev/null || (echo "sbt not found." && exit 1)
 
@@ -18,7 +18,7 @@ fi
 
 if [[ ! -d "$DIR" ]]
 then
-    sbt clean stage
+    sbt clean akkaProject/stage
     if [[ $? -ne 0 ]]
     then
         echo "Fail to build project"
