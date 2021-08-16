@@ -194,7 +194,3 @@ And open the coverage report:
 ```bash
 open target/scala-2.13/scoverage-report/index.html
 ```
-
-## WIP
-
-Take the project and give an implementation based on ZIO - branch `zio`.
