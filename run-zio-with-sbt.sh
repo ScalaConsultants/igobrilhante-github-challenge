@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DIR="zio-project/target/universal/stage/bin"
-EXEC="${DIR}/zioproject"
+EXEC="${DIR}/githubChallengeZio"
 
 which sbt >/dev/null || (echo "sbt not found." && exit 1)
 

@@ -11,3 +11,5 @@ project/target
 .vscode/
 
 .env
+
+.metals/

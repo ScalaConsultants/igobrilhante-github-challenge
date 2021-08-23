@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DIR="akka-project/target/universal/stage/bin"
-EXEC="${DIR}/akkaproject"
+EXEC="${DIR}/githubChallengeAkka"
 
 which sbt >/dev/null || (echo "sbt not found." && exit 1)
 

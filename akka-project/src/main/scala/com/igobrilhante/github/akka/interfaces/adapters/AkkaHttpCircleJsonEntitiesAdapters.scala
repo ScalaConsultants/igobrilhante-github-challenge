@@ -3,4 +3,6 @@ package com.igobrilhante.github.akka.interfaces.adapters
 import com.igobrilhante.github.adapters.json.circle.CircleJsonEntitiesAdapters
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 
-object AkkaHttpCircleJsonEntitiesAdapters extends CircleJsonEntitiesAdapters with FailFastCirceSupport
+trait AkkaHttpCircleJsonEntitiesAdapters extends CircleJsonEntitiesAdapters with FailFastCirceSupport
+
+object AkkaHttpCircleJsonEntitiesAdapters extends AkkaHttpCircleJsonEntitiesAdapters
